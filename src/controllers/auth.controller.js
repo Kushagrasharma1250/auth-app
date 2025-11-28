@@ -73,28 +73,15 @@ exports.refresh = async (req, res) => {
 
     const payload = { sub: decoded.sub, email: decoded.email, roles: decoded.roles };
     const accessToken = signAccessToken(payload, process.env.JWT_ACCESS_SECRET, process.env.ACCESS_TOKEN_TTL);
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: process.env.COOKIE_SAME_SITE || 'lax',
-      maxAge: 15 * 60 * 1000
-    });
+    const newRefreshToken = signRefreshToken(payload, process.env.JWT_REFRESH_SECRET, process.env.REFRESH_TOKEN_TTL);
+
+    setAuthCookies(res, accessToken, newRefreshToken);
 
     return res.json({ message: 'Token refreshed' });
   } catch (err) {
     return res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
-
-const express = require('express');
-const router = express.Router();
-
-// Temporary test route
-router.get('/test', (req, res) => {
-  res.send('Auth routes working!');
-});
-
-module.exports = router;   // ✅ must export router
 
 exports.logout = async (_req, res) => {
   res.clearCookie('accessToken');
